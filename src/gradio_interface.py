@@ -1,5 +1,5 @@
 import gradio as gr
-
+from src.img_gen import ImageGenerator
 
 def create_gradio_interface():
     with gr.Blocks() as demo:
