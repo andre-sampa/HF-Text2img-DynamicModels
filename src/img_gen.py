@@ -4,7 +4,6 @@ from huggingface_hub import InferenceClient
 from IPython.display import display, clear_output
 import ipywidgets as widgets
 from config.config_colab import api_token
-from colab import output
 
 
 # Step 11: Create an Output Widget to Display Results
