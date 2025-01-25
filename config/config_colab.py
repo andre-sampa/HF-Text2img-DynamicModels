@@ -13,6 +13,5 @@ else:
 
 # Debugging: Print prompt and model options
 print("=== Debug: Available Options ===")
-print("Prompt Options:", [p["alias"] for p in prompts])
 print("Model Options:", [m["alias"] for m in models])
 print("=================================")
