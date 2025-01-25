@@ -9,7 +9,7 @@ from huggingface_hub import InferenceClient
 os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(".."))
 
 # Import API token from config
-from config.config_colab import api_token
+from config.config import api_token
 
 # Step 4: Define Model Options
 MODELS = [
