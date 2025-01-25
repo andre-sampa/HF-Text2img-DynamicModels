@@ -1,12 +1,4 @@
-import os
-import sys
-
-# Set PYTHONPATH to the project root 
-# Solves all problems w subfolders - option1
-os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(".."))
-
 from google.colab import userdata
-from config.prompts import prompts  # Import prompts from prompts.py
 
 # Retrieve the Hugging Face token from Colab secrets
 api_token = userdata.get("HF_TOKEN")
