@@ -1,6 +1,6 @@
 ---
 title: HF Text2img DynamicModels
-emoji: 🏆
+emoji: 🎨
 colorFrom: pink
 colorTo: gray
 sdk: gradio
