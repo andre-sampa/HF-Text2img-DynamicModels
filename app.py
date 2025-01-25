@@ -81,11 +81,14 @@ def generate_image(
 
 # Entry point for execution if GUI cannot run
 def main():
-    prompt = input("Enter a prompt for image generation: ").strip()
-    if prompt:
-        generate_image(prompt=prompt, randomise_seed=True)
-    else:
-        print("Please provide a valid prompt.")
+    try:
+        prompt = input("Enter a prompt for image generation: ").strip()
+        if prompt:
+            generate_image(prompt=prompt, randomise_seed=True)
+        else:
+            print("Please provide a valid prompt.")
+    except EOFError:
+        print("No input provided. Exiting...")
 
 if __name__ == "__main__":
     try:
