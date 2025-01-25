@@ -3,9 +3,9 @@ import json
 import random
 from datetime import datetime
 from huggingface_hub import InferenceClient
-from config.config import api_token
-from tkinter import Tk, Button, Label, Entry, StringVar
+from config.config_colab import api_token
 
+# Function to generate an image
 def generate_image(
     model_id="stabilityai/stable-diffusion-2-1",
     prompt="Astronaut riding a horse",
@@ -31,25 +31,19 @@ def generate_image(
         randomise_seed (bool): Whether to randomise the seed.
         output_folder (str): Folder to save the generated image and metadata.
     """
-    # Generate a random seed if required
     if randomise_seed:
         seed = random.randint(0, 2**32 - 1)
 
-    # Initialize the InferenceClient
     client = InferenceClient(model=model_id, token=api_token)
-
-    # Create the output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
 
-    # Generate a unique image name with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_name = (
         f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_"
         f"{height}x{width}_steps{num_inference_steps}_scale{guidance_scale}_seed{seed}.png"
     )
     image_path = os.path.join(output_folder, image_name)
-
-    # Save metadata as a JSON file
+    
     metadata_name = image_name.replace(".png", ".json")
     metadata_path = os.path.join(output_folder, metadata_name)
 
@@ -67,7 +61,6 @@ def generate_image(
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
-    # Generate the image
     print(f"Generating image for prompt: '{prompt}' using model: {model_id}...")
     try:
         image = client.text_to_image(
@@ -79,7 +72,6 @@ def generate_image(
             seed=seed
         )
 
-        # Save the image
         image.save(image_path)
         print(f"Image saved as '{image_path}'")
         print(f"Metadata saved as '{metadata_path}'")
@@ -87,21 +79,28 @@ def generate_image(
         print(f"An error occurred: {e}")
         print("Please check the model compatibility or try again later.")
 
-def on_generate_button_click():
-    prompt = prompt_var.get()
+# Entry point for execution if GUI cannot run
+def main():
+    prompt = input("Enter a prompt for image generation: ").strip()
     if prompt:
         generate_image(prompt=prompt, randomise_seed=True)
     else:
-        print("Please enter a prompt.")
+        print("Please provide a valid prompt.")
 
-# Create a simple GUI
-root = Tk()
-root.title("Image Generator")
+if __name__ == "__main__":
+    try:
+        from tkinter import Tk, Button, Label, Entry, StringVar
 
-Label(root, text="Enter prompt:").grid(row=0, column=0, padx=5, pady=5)
-prompt_var = StringVar()
-Entry(root, textvariable=prompt_var, width=40).grid(row=0, column=1, padx=5, pady=5)
+        root = Tk()
+        root.title("Image Generator")
 
-Button(root, text="Generate Image", command=on_generate_button_click).grid(row=1, column=0, columnspan=2, pady=10)
+        Label(root, text="Enter prompt:").grid(row=0, column=0, padx=5, pady=5)
+        prompt_var = StringVar()
+        Entry(root, textvariable=prompt_var, width=40).grid(row=0, column=1, padx=5, pady=5)
 
-root.mainloop()
+        Button(root, text="Generate Image", command=lambda: generate_image(prompt=prompt_var.get(), randomise_seed=True)).grid(row=1, column=0, columnspan=2, pady=10)
+
+        root.mainloop()
+    except Exception as e:
+        print(f"GUI not available: {e}")
+        main()
