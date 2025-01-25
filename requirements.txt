@@ -9,3 +9,5 @@ gradio
 huggingface_hub
 Pillow
 PySimpleGUI
+PySimpleGUIWeb 
+python-dotenv

@@ -2,7 +2,7 @@ import os
 import json
 import random
 from datetime import datetime
-import PySimpleGUI as sg
+import PySimpleGUIWeb as sg
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
 
@@ -25,8 +25,7 @@ class ImageGeneratorConfig:
     DEFAULT_SEED = 42
 
 def create_gui():
-    """Create PySimpleGUI interface"""
-    sg.theme("DarkBlue")
+    sg.theme('DarkBlue')
 
     model_options = [model[0] for model in ImageGeneratorConfig.MODELS]
     model_values = [model[1] for model in ImageGeneratorConfig.MODELS]
@@ -53,34 +52,24 @@ def create_gui():
     return sg.Window("AI Image Generator", layout, finalize=True)
 
 def generate_image(model_id, prompt, height, width, steps, scale, seed, randomize_seed):
-    """Generate image with metadata tracking"""
-    # Load API token from environment
     load_dotenv()
-    api_token = os.getenv('HUGGINGFACE_TOKEN')
+    api_token = os.getenv('HF_TOKEN')
     
     if not api_token:
-        raise ValueError("Hugging Face API token not found. Set HUGGINGFACE_TOKEN in .env file.")
+        raise ValueError("Hugging Face API token not found.")
 
-    # Randomize seed if requested
     if randomize_seed:
         seed = random.randint(0, 2**32 - 1)
 
-    # Create output folder
     output_folder = "generated_images"
     os.makedirs(output_folder, exist_ok=True)
 
-    # Prepare image and metadata filenames
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    image_name = (
-        f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_"
-        f"{height}x{width}_steps{steps}_scale{scale}_seed{seed}.png"
-    )
+    image_name = f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_{height}x{width}_steps{steps}_scale{scale}_seed{seed}.png"
     image_path = os.path.join(output_folder, image_name)
 
-    # Initialize client
     client = InferenceClient(model=model_id, token=api_token)
 
-    # Prepare metadata
     metadata = {
         "model": model_id,
         "prompt": prompt,
@@ -93,7 +82,6 @@ def generate_image(model_id, prompt, height, width, steps, scale, seed, randomiz
         "timestamp": timestamp
     }
 
-    # Generate image
     try:
         image = client.text_to_image(
             prompt=prompt,
@@ -104,7 +92,6 @@ def generate_image(model_id, prompt, height, width, steps, scale, seed, randomiz
             seed=seed
         )
         
-        # Save image and metadata
         image.save(image_path)
         with open(image_path.replace('.png', '.json'), 'w') as f:
             json.dump(metadata, f, indent=4)
@@ -124,7 +111,6 @@ def main():
 
         if event == "Generate Image":
             try:
-                # Get model value from combo box
                 selected_model_index = window["MODEL"].get_index()
                 model_id = ImageGeneratorConfig.MODELS[selected_model_index][1]
 
