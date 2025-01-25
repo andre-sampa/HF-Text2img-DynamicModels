@@ -4,6 +4,7 @@ from huggingface_hub import InferenceClient
 from IPython.display import display, clear_output
 import ipywidgets as widgets
 from config.config_colab import api_token
+from src.gradio_interface import model_dropdown
 
 # Step 13: Define the Image Generation Function AA
 def generate_image(button, output):
