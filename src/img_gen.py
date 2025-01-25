@@ -6,12 +6,8 @@ import ipywidgets as widgets
 from config.config_colab import api_token
 from colab import output
 
-
-
 # Step 13: Define the Image Generation Function
-def generate_image(button):
-    # Step 11: Create an Output Widget to Display Results
-    output = widgets.Output()
+def generate_image(button, output):
     # Clear the output widget (only clears the image and logs, not the widgets)
     output.clear_output(wait=True)
 
