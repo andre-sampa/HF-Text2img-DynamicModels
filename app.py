@@ -3,7 +3,7 @@ import json
 import random
 from datetime import datetime
 from huggingface_hub import InferenceClient
-from config.config_colab import api_token
+from config.config import api_token
 from tkinter import Tk, Button, Label, Entry, StringVar
 
 def generate_image(
