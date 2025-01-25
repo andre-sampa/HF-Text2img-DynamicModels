@@ -3,7 +3,7 @@ import json
 import random
 from datetime import datetime
 from huggingface_hub import InferenceClient
-from config.config_colab import api_token
+from config.config import api_token
 
 # Function to generate an image
 def generate_image(
