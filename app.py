@@ -2,112 +2,145 @@ import os
 import json
 import random
 from datetime import datetime
-from huggingface_hub import InferenceClient
-from config.config import api_token
 import PySimpleGUI as sg
+from huggingface_hub import InferenceClient
+from dotenv import load_dotenv
 
-# Function to generate an image
-def generate_image(
-    model_id="stabilityai/stable-diffusion-2-1",
-    prompt="Astronaut riding a horse",
-    height=1024,
-    width=1024,
-    num_inference_steps=50,
-    guidance_scale=7.5,
-    seed=42,
-    randomise_seed=False,
-    output_folder="generated_images"
-):
-    if randomise_seed:
+class ImageGeneratorConfig:
+    MODELS = [
+        ("Stable Diffusion 3.5-large", "stabilityai/stable-diffusion-3.5-large"),
+        ("Stable Diffusion 3.5-large-turbo", "stabilityai/stable-diffusion-3.5-large-turbo"),
+        ("Stable Diffusion 2.1", "stabilityai/stable-diffusion-2-1"),
+        ("Stable Diffusion 1.5", "runwayml/stable-diffusion-v1-5"),
+        ("FLUX1.0", "black-forest-labs/FLUX.1-dev"),
+        ("Flux-Midjourney-Mix2-LoRA", "strangerzonehf/Flux-Midjourney-Mix2-LoRA"),
+        ("Custom Model", "your-custom-model-id")
+    ]
+    DEFAULT_MODEL = "stabilityai/stable-diffusion-2-1"
+    DEFAULT_PROMPT = "Astronaut riding a horse"
+    DEFAULT_HEIGHT = 1024
+    DEFAULT_WIDTH = 1024
+    DEFAULT_STEPS = 50
+    DEFAULT_GUIDANCE = 7.5
+    DEFAULT_SEED = 42
+
+def create_gui():
+    """Create PySimpleGUI interface"""
+    sg.theme("DarkBlue")
+
+    model_options = [model[0] for model in ImageGeneratorConfig.MODELS]
+    model_values = [model[1] for model in ImageGeneratorConfig.MODELS]
+
+    layout = [
+        [sg.Text("Select Model:"), 
+         sg.Combo(model_options, default_value=ImageGeneratorConfig.DEFAULT_MODEL, key="MODEL", size=(40, 1))],
+        [sg.Text("Prompt:"), 
+         sg.Multiline(default_text=ImageGeneratorConfig.DEFAULT_PROMPT, key="PROMPT", size=(50, 3))],
+        [sg.Text("Height:"), 
+         sg.Slider(range=(64, 1024), default_value=ImageGeneratorConfig.DEFAULT_HEIGHT, orientation='h', key="HEIGHT", size=(40, 15))],
+        [sg.Text("Width:"), 
+         sg.Slider(range=(64, 1024), default_value=ImageGeneratorConfig.DEFAULT_WIDTH, orientation='h', key="WIDTH", size=(40, 15))],
+        [sg.Text("Inference Steps:"), 
+         sg.Slider(range=(1, 100), default_value=ImageGeneratorConfig.DEFAULT_STEPS, orientation='h', key="STEPS", size=(40, 15))],
+        [sg.Text("Guidance Scale:"), 
+         sg.Slider(range=(0.0, 20.0), default_value=ImageGeneratorConfig.DEFAULT_GUIDANCE, orientation='h', key="SCALE", size=(40, 15))],
+        [sg.Text("Seed:"), 
+         sg.Input(default_text=str(ImageGeneratorConfig.DEFAULT_SEED), key="SEED", size=(20, 1)),
+         sg.Checkbox("Randomize Seed", key="RANDOMIZE")],
+        [sg.Button("Generate Image"), sg.Button("Exit")]
+    ]
+
+    return sg.Window("AI Image Generator", layout, finalize=True)
+
+def generate_image(model_id, prompt, height, width, steps, scale, seed, randomize_seed):
+    """Generate image with metadata tracking"""
+    # Load API token from environment
+    load_dotenv()
+    api_token = os.getenv('HUGGINGFACE_TOKEN')
+    
+    if not api_token:
+        raise ValueError("Hugging Face API token not found. Set HUGGINGFACE_TOKEN in .env file.")
+
+    # Randomize seed if requested
+    if randomize_seed:
         seed = random.randint(0, 2**32 - 1)
 
-    client = InferenceClient(model=model_id, token=api_token)
+    # Create output folder
+    output_folder = "generated_images"
     os.makedirs(output_folder, exist_ok=True)
 
+    # Prepare image and metadata filenames
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_name = (
         f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_"
-        f"{height}x{width}_steps{num_inference_steps}_scale{guidance_scale}_seed{seed}.png"
+        f"{height}x{width}_steps{steps}_scale{scale}_seed{seed}.png"
     )
     image_path = os.path.join(output_folder, image_name)
-    metadata_name = image_name.replace(".png", ".json")
-    metadata_path = os.path.join(output_folder, metadata_name)
 
+    # Initialize client
+    client = InferenceClient(model=model_id, token=api_token)
+
+    # Prepare metadata
     metadata = {
         "model": model_id,
         "prompt": prompt,
         "height": height,
         "width": width,
-        "num_inference_steps": num_inference_steps,
-        "guidance_scale": guidance_scale,
+        "num_inference_steps": steps,
+        "guidance_scale": scale,
         "seed": seed,
         "image_path": image_path,
-        "timestamp": timestamp,
+        "timestamp": timestamp
     }
-    with open(metadata_path, "w") as f:
-        json.dump(metadata, f, indent=4)
 
-    sg.popup(f"Generating image for prompt: '{prompt}' using model: {model_id}...")
+    # Generate image
     try:
         image = client.text_to_image(
             prompt=prompt,
             height=height,
             width=width,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
+            num_inference_steps=steps,
+            guidance_scale=scale,
             seed=seed
         )
-
+        
+        # Save image and metadata
         image.save(image_path)
-        sg.popup(f"Image saved as '{image_path}'", f"Metadata saved as '{metadata_path}'")
+        with open(image_path.replace('.png', '.json'), 'w') as f:
+            json.dump(metadata, f, indent=4)
+
+        return image_path
     except Exception as e:
-        sg.popup_error(f"An error occurred: {e}", "Please check the model compatibility or try again later.")
+        raise RuntimeError(f"Image generation failed: {e}")
 
-# GUI interface
 def main():
-    sg.theme("DarkBlue")
-
-    layout = [
-        [sg.Text("Enter Prompt:"), sg.InputText(key="PROMPT")],
-        [sg.Text("Model ID:"), sg.InputText("stabilityai/stable-diffusion-2-1", key="MODEL_ID")],
-        [sg.Text("Image Height:"), sg.InputText("1024", key="HEIGHT")],
-        [sg.Text("Image Width:"), sg.InputText("1024", key="WIDTH")],
-        [sg.Text("Inference Steps:"), sg.InputText("50", key="STEPS")],
-        [sg.Text("Guidance Scale:"), sg.InputText("7.5", key="SCALE")],
-        [sg.Text("Seed (leave empty for random):"), sg.InputText("", key="SEED")],
-        [sg.Text("Output Folder:"), sg.InputText("generated_images", key="OUTPUT")],
-        [sg.Checkbox("Randomize Seed", default=False, key="RANDOMIZE")],
-        [sg.Button("Generate"), sg.Button("Exit")]
-    ]
-
-    window = sg.Window("Image Generator", layout)
+    window = create_gui()
 
     while True:
         event, values = window.read()
-        if event == sg.WINDOW_CLOSED or event == "Exit":
+
+        if event in (sg.WINDOW_CLOSED, "Exit"):
             break
 
-        if event == "Generate":
-            prompt = values["PROMPT"]
-            if not prompt:
-                sg.popup_error("Prompt cannot be empty!")
-                continue
-
+        if event == "Generate Image":
             try:
-                seed = int(values["SEED"]) if values["SEED"] else 42
-                generate_image(
-                    model_id=values["MODEL_ID"],
-                    prompt=prompt,
+                # Get model value from combo box
+                selected_model_index = window["MODEL"].get_index()
+                model_id = ImageGeneratorConfig.MODELS[selected_model_index][1]
+
+                image_path = generate_image(
+                    model_id=model_id,
+                    prompt=values["PROMPT"],
                     height=int(values["HEIGHT"]),
                     width=int(values["WIDTH"]),
-                    num_inference_steps=int(values["STEPS"]),
-                    guidance_scale=float(values["SCALE"]),
-                    seed=seed,
-                    randomise_seed=values["RANDOMIZE"],
-                    output_folder=values["OUTPUT"]
+                    steps=int(values["STEPS"]),
+                    scale=float(values["SCALE"]),
+                    seed=int(values["SEED"]) if values["SEED"] else ImageGeneratorConfig.DEFAULT_SEED,
+                    randomize_seed=values["RANDOMIZE"]
                 )
-            except ValueError as ve:
-                sg.popup_error(f"Invalid input: {ve}")
+                sg.popup_ok(f"Image generated: {image_path}")
+            except Exception as e:
+                sg.popup_error(f"Generation failed: {e}")
 
     window.close()
 
