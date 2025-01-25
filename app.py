@@ -6,14 +6,15 @@ import gradio as gr
 from huggingface_hub import InferenceClient
 from config.config import api_token
 
-
 class ImageGenerator:
+    DEFAULT_PROMPT = "Astronaut riding a horse"
     MODELS = [
         "stabilityai/stable-diffusion-3.5-large",
         "stabilityai/stable-diffusion-3.5-large-turbo", 
         "stabilityai/stable-diffusion-2-1",
         "runwayml/stable-diffusion-v1-5",
-        "black-forest-labs/FLUX.1-dev"
+        "black-forest-labs/FLUX.1-dev",
+        "strangerzonehf/Flux-Midjourney-Mix2-LoRA",
     ]
 
     @staticmethod
@@ -80,8 +81,12 @@ class ImageGenerator:
 def create_gradio_interface():
     with gr.Blocks() as demo:
         with gr.Row():
-            # Prompt input
-            prompt = gr.Textbox(label="Prompt", placeholder="Enter image generation prompt")
+            # Prompt input with default value
+            prompt = gr.Textbox(
+                label="Prompt", 
+                value=ImageGenerator.DEFAULT_PROMPT, 
+                placeholder="Enter image generation prompt"
+            )
             
             # Model selection
             model = gr.Dropdown(
