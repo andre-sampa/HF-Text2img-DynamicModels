@@ -1,56 +1,55 @@
 import os
-import sys
 import json
 import random
 from datetime import datetime
 from huggingface_hub import InferenceClient
+from config.config_colab import api_token
+from tkinter import Tk, Button, Label, Entry, StringVar
 
-# Set PYTHONPATH to the project root
-os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(".."))
+def generate_image(
+    model_id="stabilityai/stable-diffusion-2-1",
+    prompt="Astronaut riding a horse",
+    height=1024,
+    width=1024,
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    seed=42,
+    randomise_seed=False,
+    output_folder="generated_images"
+):
+    """
+    Generate an image using a selected model and parameters.
 
-# Import API token from config
-from config.config import api_token
-
-# Step 4: Define Model Options
-MODELS = [
-    ("stable-diffusion-3.5-large", "stabilityai/stable-diffusion-3.5-large"),
-    ("Stable Diffusion 3.5-large-turbo", "stabilityai/stable-diffusion-3.5-large-turbo"),
-    ("Stable Diffusion 2.1", "stabilityai/stable-diffusion-2-1"),
-    ("Stable Diffusion 1.5", "runwayml/stable-diffusion-v1-5"),
-    ("FLUX1.0", "black-forest-labs/FLUX.1-dev"),
-    ("Flux-Midjourney-Mix2-LoRA", "strangerzonehf/Flux-Midjourney-Mix2-LoRA"),
-    ("Custom Model", "your-custom-model-id"),  # Add your own model here
-]
-
-# Step 5: Define Default Parameters
-DEFAULT_MODEL = "stabilityai/stable-diffusion-2-1"
-DEFAULT_PROMPT = "Astronaut riding a horse"
-DEFAULT_HEIGHT = 1024
-DEFAULT_WIDTH = 1024
-DEFAULT_STEPS = 50
-DEFAULT_GUIDANCE_SCALE = 7.5
-DEFAULT_SEED = 42
-DEFAULT_RANDOMISE_SEED = False
-
-# Step 6: Define the Image Generation Function
-def generate_image(model_id, prompt, height, width, num_inference_steps, guidance_scale, seed, randomise_seed):
-    # Generate a random seed if the checkbox is checked
+    Args:
+        model_id (str): The model ID to use for image generation.
+        prompt (str): The text prompt for the image.
+        height (int): Height of the generated image.
+        width (int): Width of the generated image.
+        num_inference_steps (int): Number of inference steps.
+        guidance_scale (float): Guidance scale value.
+        seed (int): Seed for reproducibility.
+        randomise_seed (bool): Whether to randomise the seed.
+        output_folder (str): Folder to save the generated image and metadata.
+    """
+    # Generate a random seed if required
     if randomise_seed:
-        seed = random.randint(0, 2**32 - 1)  # Generate a random seed
+        seed = random.randint(0, 2**32 - 1)
 
     # Initialize the InferenceClient
     client = InferenceClient(model=model_id, token=api_token)
 
     # Create the output folder if it doesn't exist
-    output_folder = "generated_images"
     os.makedirs(output_folder, exist_ok=True)
 
-    # Generate a unique image name with timestamp at the start
+    # Generate a unique image name with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    image_name = f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_{height}x{width}_steps{num_inference_steps}_scale{guidance_scale}_seed{seed}.png"
+    image_name = (
+        f"{timestamp}_{model_id.split('/')[-1]}_{prompt[:20]}_"
+        f"{height}x{width}_steps{num_inference_steps}_scale{guidance_scale}_seed{seed}.png"
+    )
     image_path = os.path.join(output_folder, image_name)
 
-    # Save metadata as a JSON file with the same name as the image
+    # Save metadata as a JSON file
     metadata_name = image_name.replace(".png", ".json")
     metadata_path = os.path.join(output_folder, metadata_name)
 
@@ -63,12 +62,12 @@ def generate_image(model_id, prompt, height, width, num_inference_steps, guidanc
         "guidance_scale": guidance_scale,
         "seed": seed,
         "image_path": image_path,
-        "timestamp": timestamp
+        "timestamp": timestamp,
     }
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
-    # Generate the image with additional parameters
+    # Generate the image
     print(f"Generating image for prompt: '{prompt}' using model: {model_id}...")
     try:
         image = client.text_to_image(
@@ -79,6 +78,8 @@ def generate_image(model_id, prompt, height, width, num_inference_steps, guidanc
             guidance_scale=guidance_scale,
             seed=seed
         )
+
+        # Save the image
         image.save(image_path)
         print(f"Image saved as '{image_path}'")
         print(f"Metadata saved as '{metadata_path}'")
@@ -86,17 +87,21 @@ def generate_image(model_id, prompt, height, width, num_inference_steps, guidanc
         print(f"An error occurred: {e}")
         print("Please check the model compatibility or try again later.")
 
-# Step 7: Main Execution Block
-if __name__ == "__main__":
-    # Get user input (replace with command-line arguments or GUI inputs)
-    model_id = DEFAULT_MODEL
-    prompt = DEFAULT_PROMPT
-    height = DEFAULT_HEIGHT
-    width = DEFAULT_WIDTH
-    num_inference_steps = DEFAULT_STEPS
-    guidance_scale = DEFAULT_GUIDANCE_SCALE
-    seed = DEFAULT_SEED
-    randomise_seed = DEFAULT_RANDOMISE_SEED
+def on_generate_button_click():
+    prompt = prompt_var.get()
+    if prompt:
+        generate_image(prompt=prompt, randomise_seed=True)
+    else:
+        print("Please enter a prompt.")
 
-    # Generate the image
-    generate_image(model_id, prompt, height, width, num_inference_steps, guidance_scale, seed, randomise_seed)
+# Create a simple GUI
+root = Tk()
+root.title("Image Generator")
+
+Label(root, text="Enter prompt:").grid(row=0, column=0, padx=5, pady=5)
+prompt_var = StringVar()
+Entry(root, textvariable=prompt_var, width=40).grid(row=0, column=1, padx=5, pady=5)
+
+Button(root, text="Generate Image", command=on_generate_button_click).grid(row=1, column=0, columnspan=2, pady=10)
+
+root.mainloop()
