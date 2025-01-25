@@ -4,7 +4,8 @@ import random
 from datetime import datetime
 import gradio as gr
 from huggingface_hub import InferenceClient
-from dotenv import load_dotenv
+from config.config import api_token
+
 
 class ImageGenerator:
     MODELS = [
@@ -26,13 +27,6 @@ class ImageGenerator:
         seed=None,
         randomize_seed=False
     ):
-        # Load API token
-        load_dotenv()
-        api_token = os.getenv('HF_TOKEN')
-        
-        if not api_token:
-            raise ValueError("Hugging Face API token not found")
-
         # Randomize seed if requested
         if randomize_seed or seed is None:
             seed = random.randint(0, 2**32 - 1)
