@@ -1,3 +1,6 @@
+import gradio as gr
+
+
 def create_gradio_interface():
     with gr.Blocks() as demo:
         with gr.Row():
