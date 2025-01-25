@@ -1,0 +1,10 @@
+accelerate
+diffusers
+invisible_watermark
+torch
+transformers
+xformers
+IPython
+gradio
+huggingface_hub
+Pillow
