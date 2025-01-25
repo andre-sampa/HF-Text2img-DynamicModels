@@ -1,4 +1,13 @@
 # config_colab.py
+import sys
+import os
+
+# Add the src folder to the Python path
+# Solves all problems w subfolders - option2
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
+if src_path not in sys.path:
+    sys.path.append(src_path)
+    
 from google.colab import userdata
 from config.prompts import prompts  # Import prompts from prompts.py
 
