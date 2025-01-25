@@ -4,7 +4,23 @@ from huggingface_hub import InferenceClient
 from IPython.display import display, clear_output
 import ipywidgets as widgets
 from config.config_colab import api_token
-from src.gradio_interface import model_dropdown
+
+# Step 4: Create a Dropdown for Model Selection (with wider layout)
+model_dropdown = widgets.Dropdown(
+    options=[
+        ("stable-diffusion-3.5-large", "stabilityai/stable-diffusion-3.5-large"),
+        ("Stable Diffusion 3.5-large-turbo", "stabilityai/stable-diffusion-3.5-large-turbo"),
+        ("Stable Diffusion 2.1", "stabilityai/stable-diffusion-2-1"),
+        ("Stable Diffusion 1.5", "runwayml/stable-diffusion-v1-5"),
+        ("FLUX1.0", "black-forest-labs/FLUX.1-dev"),
+        ("Flux-Midjourney-Mix2-LoRA", "strangerzonehf/Flux-Midjourney-Mix2-LoRA"),
+        ("Custom Model", "your-custom-model-id"),  # Add your own model here
+    ],
+    value="stabilityai/stable-diffusion-2-1",  # Default model
+    description="Select Model:",
+    disabled=False,
+    layout=widgets.Layout(width="500px")  # Set the width of the dropdown
+)
 
 # Step 13: Define the Image Generation Function AA
 def generate_image(button, output):
