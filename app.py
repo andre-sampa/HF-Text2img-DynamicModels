@@ -1,17 +1,15 @@
 import os
 import sys
-
-# Set PYTHONPATH to the project root 
-# Solves all problems w subfolders - ONLY WAY FOR IPYNB FILES
-os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(".."))
-
 import json
 import random
 from datetime import datetime
 from huggingface_hub import InferenceClient
 
+# Set PYTHONPATH to the project root
+os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(".."))
+
 # Import API token from config
-from config.config import api_token
+from config.config_colab import api_token
 
 # Step 4: Define Model Options
 MODELS = [
